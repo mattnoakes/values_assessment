@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Values Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Serene Professional (Sage, Warm Slate, and Cream) -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfaf7;
+            color: #334155;
+        }
+
+        .step-content { display: none; }
+        .step-content.active { display: block; }
+
+        .value-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .value-card.selected {
+            background-color: #ecf3ee;
+            border-color: #647c64;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Application Structure Plan: 
+    The SPA follows a "Discovery Journey" architecture. It moves from broad selection (Step 1) to focused prioritization (Step 2) and finally to synthetic visioning (Step 3). This linear flow prevents cognitive overload. The final dashboard provides a holistic view of the user's 'Values Compass', using a Polar Area chart to visualize the hierarchy of their top 5 choices, making the abstract concept of 'priority' visually tangible. 
+    -->
+
+    <!-- Visualization & Content Choices: 
+    1. Interactive Grid (Step 1) -> Selection -> Multi-select cards with counter -> Allows exploration of all 30 values easily.
+    2. Dynamic Form (Step 2) -> Detail & Definition -> User-ranked inputs -> Forces the critical step of personal definition.
+    3. Narrative Builder (Step 3) -> Synthesis -> Text area with live values reference -> Connects values to actionable goals.
+    4. Polar Area Chart (Final) -> Summary -> Chart.js Canvas -> Visualizes the 'weight' of the top values relative to their rank.
+    - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+
+    <nav class="bg-white border-b border-slate-200 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center text-white text-sm">V</span>
+                Career Values Navigator
+            </h1>
+            <div id="progress-bar-container" class="hidden md:flex items-center gap-4 text-sm font-medium text-slate-400">
+                <span class="step-indicator active text-emerald-600">Selection</span>
+                <span class="h-px w-8 bg-slate-200"></span>
+                <span class="step-indicator">Definition</span>
+                <span class="h-px w-8 bg-slate-200"></span>
+                <span class="step-indicator">Vision</span>
+                <span class="h-px w-8 bg-slate-200"></span>
+                <span class="step-indicator">Summary</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-6 md:p-12 max-w-5xl mx-auto w-full">
+        
+        <!-- STEP 1: SELECTION -->
+        <section id="step1" class="step-content active">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Identify Your Core Values</h2>
+                <p class="text-slate-600 leading-relaxed max-w-3xl">
+                    Values are the principles that guide your decisions and provide a sense of fulfillment. In this section, explore the list below and identify your <strong>top five</strong> most important values. Limiting your selection forces you to recognize the core principles that truly drive you.
+                </p>
+            </div>
+
+            <div class="flex justify-between items-center mb-6 sticky top-[80px] bg-[#fcfaf7] py-2 z-40">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Select Exactly 5 Values</p>
+                <div class="bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm">
+                    <span id="selection-count" class="font-bold text-emerald-600">0</span> / 5 Selected
+                </div>
+            </div>
+
+            <div id="values-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+                <!-- Values will be injected by JS -->
+            </div>
+
+            <div class="flex justify-end pt-6 border-t border-slate-200">
+                <button onclick="goToStep(2)" id="next-to-step2" disabled class="bg-slate-300 text-white px-8 py-3 rounded-lg font-semibold cursor-not-allowed transition-all">
+                    Next: Prioritize & Define
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: DEFINITION -->
+        <section id="step2" class="step-content">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Rank and Define</h2>
+                <p class="text-slate-600 leading-relaxed max-w-3xl">
+                    How you interpret a value is as unique as your career path. In this section, rank your chosen values from 1 (Most Important) to 5. Crucially, <strong>define what each value means to you personally</strong>. Your definition acts as your unique benchmark for success.
+                </p>
+            </div>
+
+            <div id="definition-list" class="space-y-6 mb-10">
+                <!-- Rank inputs will be injected here -->
+            </div>
+
+            <div class="flex justify-between pt-6 border-t border-slate-200">
+                <button onclick="goToStep(1)" class="text-slate-500 font-semibold px-6 py-3">Back</button>
+                <button onclick="goToStep(3)" id="next-to-step3" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-semibold transition-all">
+                    Next: Create Your Vision
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 3: VISION -->
+        <section id="step3" class="step-content">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Reflect and Vision</h2>
+                <div class="text-slate-600 leading-relaxed max-w-4xl space-y-4">
+                    <p>
+                        Now, reflect on the goal you identified. How well does the goal you identified connect to your values? If several of your top values connect to your goal, then you are likely to be more motivated to achieve that goal. If not, then you may want to revise your goal so that it is more connected to what is important to you.
+                    </p>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm my-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">A Current Career Goal</label>
+                        <input type="text" id="career-goal" placeholder="e.g., Transition into project management..." class="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <p>
+                        Finally, try to translate your definition of your most important values into a narrative statement that describes a potential career goal for you to strive toward. For example, if you value autonomy, creativity, economic rewards, good physical health, and helping others, your narrative statement could be something like the following:
+                    </p>
+                    <p class="italic bg-slate-50 p-4 rounded-lg border border-slate-200 text-slate-700">
+                        "I desire a career in which I will work independently, have the opportunity to create something to help others, earn a salary of at least $75,000 per year, and have enough free time for activities such as yoga and rock climbing."
+                    </p>
+                    <p>
+                        Your statement only needs to incorporate your values; do not worry about identifying a specific occupation. That can happen later. For now, it is enough to capture your values, as you define them, in your narrative statement.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Your Values Narrative</label>
+                        <p class="text-xs text-slate-500 mb-4 italic">Example: "I desire a career where I have autonomy to direct my own projects and earn enough for my family..."</p>
+                        <textarea id="narrative-statement" rows="6" class="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Write your narrative here..."></textarea>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Your Compass Reference</h3>
+                    <div id="vision-reference-list" class="space-y-4">
+                        <!-- Dynamic list of top 5 for reference -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between pt-10 mt-10 border-t border-slate-200">
+                <button onclick="goToStep(2)" class="text-slate-500 font-semibold px-6 py-3">Back</button>
+                <button onclick="generateSummary()" class="bg-slate-900 hover:bg-black text-white px-8 py-3 rounded-lg font-semibold transition-all">
+                    Complete Navigator
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 4: SUMMARY DASHBOARD -->
+        <section id="step4" class="step-content">
+            <div class="mb-8 text-center">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">Your Career Values Profile</h2>
+                <p class="text-slate-500">A visual and textual synthesis of your core professional drivers.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-8 mb-10">
+                <div class="space-y-4">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Values Narrative</h3>
+                        <p id="summary-narrative" class="text-slate-800 leading-relaxed italic text-lg"></p>
+                    </div>
+                    <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+                        <h3 class="text-sm font-bold text-emerald-800 uppercase mb-2">Career Goal Alignment</h3>
+                        <p id="summary-goal" class="text-emerald-900 font-medium"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm mb-10">
+                <h3 class="text-xl font-bold text-slate-800 mb-6">Personalized Definitions</h3>
+                <div id="summary-definitions" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Definitions summary -->
+                </div>
+            </div>
+
+            <div class="flex justify-center pt-6 border-t border-slate-200">
+                <button onclick="window.print()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium transition-all mr-4">Print Profile</button>
+                <button onclick="location.reload()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-semibold transition-all">Start New Assessment</button>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 px-6 mt-12">
+        <div class="max-w-5xl mx-auto text-center text-slate-400 text-sm">
+            &copy; Career Flow and Development: Values Sorting Assessment Toolkit
+        </div>
+    </footer>
+
+    <script>
+        const valuesList = [
+            "Good family relationships", "Financial security", "Job security", 
+            "Freedom from discrimination", "Creativity", "Set routine", 
+            "Time by myself", "Community activities", "Physical activities", 
+            "Attractive physical appearance", "Variety", "Power", 
+            "Recognition", "Prestige", "Freedom from stress", 
+            "Associating with people I like", "Success", "Freedom to live where I choose", 
+            "Leisure time", "Fame", "Strong religious faith", 
+            "Good health", "Adventure", "World peace", 
+            "A beautiful home", "Having children", "Autonomy", 
+            "Helping others", "Economic rewards"
+        ];
+
+        let selectedValues = [];
+        let valueDefinitions = {};
+        let myChart = null;
+
+        // Initialize grid
+        const grid = document.getElementById('values-grid');
+        valuesList.forEach(val => {
+            const card = document.createElement('div');
+            card.className = 'value-card bg-white p-4 rounded-xl border border-slate-200 text-sm font-medium flex items-center justify-between';
+            card.innerHTML = `<span>${val}</span><div class="w-4 h-4 rounded-full border border-slate-300 flex-shrink-0"></div>`;
+            card.onclick = () => toggleValue(val, card);
+            grid.appendChild(card);
+        });
+
+        let customValueStr = "";
+        const customCard = document.createElement('div');
+        customCard.className = 'value-card bg-white p-4 rounded-xl border border-slate-200 text-sm font-medium flex items-center justify-between col-span-1 sm:col-span-2 lg:col-span-1';
+        customCard.innerHTML = `
+            <input type="text" id="custom-input" placeholder="Other (type your own)..." class="w-full bg-transparent outline-none placeholder-slate-400 text-slate-700 mr-2" />
+            <div id="custom-circle" class="w-4 h-4 rounded-full border border-slate-300 flex-shrink-0"></div>
+        `;
+        
+        customCard.onclick = (e) => {
+            const input = document.getElementById('custom-input');
+            
+            // If clicking the text input directly while not yet selected, let them type
+            if (e.target === input && !customCard.classList.contains('selected')) {
+                return; 
+            }
+            
+            const val = input.value.trim();
+            
+            // Prevent selection if empty
+            if (!val) {
+                input.focus();
+                return;
+            }
+
+            if (customCard.classList.contains('selected')) {
+                // Deselect logic
+                const idx = selectedValues.indexOf(customValueStr);
+                if (idx > -1) selectedValues.splice(idx, 1);
+                customCard.classList.remove('selected');
+                document.getElementById('custom-circle').innerHTML = '';
+                customValueStr = "";
+                input.readOnly = false; // Unlock input for editing
+            } else if (selectedValues.length < 5) {
+                // Select logic
+                customValueStr = val;
+                selectedValues.push(customValueStr);
+                customCard.classList.add('selected');
+                document.getElementById('custom-circle').innerHTML = '<div class="w-2 h-2 bg-emerald-600 rounded-full mx-auto mt-1"></div>';
+                input.readOnly = true; // Lock input to prevent modifying the array key
+            }
+            updateSelectionUI();
+        };
+
+        grid.appendChild(customCard);
+
+        function toggleValue(val, card) {
+            const idx = selectedValues.indexOf(val);
+            if (idx > -1) {
+                selectedValues.splice(idx, 1);
+                card.classList.remove('selected');
+                card.querySelector('div').innerHTML = '';
+            } else if (selectedValues.length < 5) {
+                selectedValues.push(val);
+                card.classList.add('selected');
+                card.querySelector('div').innerHTML = '<div class="w-2 h-2 bg-emerald-600 rounded-full mx-auto mt-1"></div>';
+            }
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            document.getElementById('selection-count').innerText = selectedValues.length;
+            const btn = document.getElementById('next-to-step2');
+            if (selectedValues.length === 5) {
+                btn.disabled = false;
+                btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-semibold transition-all cursor-pointer";
+            } else {
+                btn.disabled = true;
+                btn.className = "bg-slate-300 text-white px-8 py-3 rounded-lg font-semibold cursor-not-allowed transition-all";
+            }
+        }
+
+        function goToStep(step) {
+            document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            const indicators = document.querySelectorAll('.step-indicator');
+            indicators.forEach((ind, i) => {
+                if (i < step) ind.classList.add('text-emerald-600');
+                else ind.classList.remove('text-emerald-600');
+            });
+
+            if (step === 2) buildDefinitionList();
+            if (step === 3) buildVisionReference();
+            
+            window.scrollTo(0, 0);
+        }
+
+        function buildDefinitionList() {
+            const container = document.getElementById('definition-list');
+            container.innerHTML = '';
+            selectedValues.forEach((val, i) => {
+                // Escape quotes for the inline event handler to prevent breaking
+                const safeVal = val.replace(/'/g, "\\'");
+                const div = document.createElement('div');
+                div.className = "bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-all";
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700">${i+1}</div>
+                            <h3 class="text-lg font-bold text-slate-800">${val}</h3>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="moveValueUp(${i})" class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" ${i === 0 ? 'disabled' : ''} title="Move Up">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button onclick="moveValueDown(${i})" class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" ${i === selectedValues.length - 1 ? 'disabled' : ''} title="Move Down">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea oninput="saveDef('${safeVal}', this.value)" class="w-full p-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="Define what ${val} means to you personally...">${valueDefinitions[val] || ''}</textarea>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function moveValueUp(index) {
+            if (index > 0) {
+                const temp = selectedValues[index];
+                selectedValues[index] = selectedValues[index - 1];
+                selectedValues[index - 1] = temp;
+                buildDefinitionList();
+            }
+        }
+
+        function moveValueDown(index) {
+            if (index < selectedValues.length - 1) {
+                const temp = selectedValues[index];
+                selectedValues[index] = selectedValues[index + 1];
+                selectedValues[index + 1] = temp;
+                buildDefinitionList();
+            }
+        }
+
+        function saveDef(val, text) {
+            valueDefinitions[val] = text;
+        }
+
+        function buildVisionReference() {
+            const container = document.getElementById('vision-reference-list');
+            container.innerHTML = '';
+            selectedValues.forEach(val => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white rounded border border-slate-200 text-xs";
+                div.innerHTML = `<span class="font-bold text-slate-700">${val}:</span> <span class="text-slate-500">${valueDefinitions[val] || 'No definition provided'}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        function generateSummary() {
+            document.getElementById('summary-narrative').innerText = document.getElementById('narrative-statement').value || "No narrative statement written.";
+            document.getElementById('summary-goal').innerText = "Current Goal: " + (document.getElementById('career-goal').value || "None specified");
+            
+            const defContainer = document.getElementById('summary-definitions');
+            defContainer.innerHTML = '';
+            selectedValues.forEach((val, i) => {
+                const div = document.createElement('div');
+                div.innerHTML = `<p class="font-bold text-slate-700 text-sm">${i+1}. ${val}</p><p class="text-slate-500 text-sm italic">"${valueDefinitions[val] || 'No definition provided'}"</p>`;
+                defContainer.appendChild(div);
+            });
+
+            goToStep(4);
+        }
+
+    </script>
+</body>
+</html>
